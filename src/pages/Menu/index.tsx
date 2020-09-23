@@ -175,6 +175,10 @@ const Menu: React.FC = () => {
     navigation.navigate('PanResponder');
   }, [navigation]);
 
+  const goToApp = useCallback(() => {
+    navigation.navigate('Aplicativo');
+  }, [navigation]);
+
   const [animations, setAnimations] = useState<Animation[]>([
     {
       id: '1',
@@ -230,6 +234,11 @@ const Menu: React.FC = () => {
       id: '11',
       name: 'PanResponder',
       animation: () => goToPanResponder(),
+    },
+    {
+      id: '12',
+      name: 'Aplicativo',
+      animation: () => goToApp(),
     },
   ]);
 
