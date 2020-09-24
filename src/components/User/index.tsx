@@ -4,7 +4,7 @@
 /* eslint-disable react/jsx-filename-extension */
 /* eslint-disable react/prefer-stateless-function */
 /* Core */
-import React, { Component } from 'react';
+import React, { useState, useEffect } from 'react';
 
 /* Presentational */
 import {
@@ -12,12 +12,13 @@ import {
   Text,
   Image,
   Alert,
+  Animated,
   StyleSheet,
   Dimensions,
   TouchableWithoutFeedback,
 } from 'react-native';
 
-// import Icon from 'react-native-vector-icons/Feather';
+import Icon from 'react-native-vector-icons/FontAwesome';
 
 interface User {
   id: number;
@@ -35,23 +36,52 @@ interface UserComponent {
 }
 
 const User: React.FC<UserComponent> = ({ user, onPress, ...rest }) => {
-  return (
-    <TouchableWithoutFeedback onPress={() => onPress}>
-      <View style={styles.userContainer}>
-        <Image style={styles.thumbnail} source={{ uri: user.thumbnail }} />
+  const [offset, setOffset] = useState(new Animated.ValueXY({ x: 0, y: 50 }));
+  const [opacity, setOpacity] = useState(new Animated.Value(0));
 
-        <View style={[styles.infoContainer, { backgroundColor: user.color }]}>
-          <View style={styles.bioContainer}>
-            <Text style={styles.name}>{user.name.toUpperCase()}</Text>
-            <Text style={styles.description}>{user.description}</Text>
-          </View>
-          <View style={styles.likesContainer}>
-            {/* <Icon name="heart" size={12} color="#FFF" /> */}
-            <Text style={styles.likes}>{user.likes}</Text>
+  useEffect(() => {
+    Animated.parallel([
+      Animated.spring(offset.y, {
+        toValue: 0,
+        speed: 5,
+        bounciness: 20,
+        useNativeDriver: false,
+      }),
+
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 500,
+        useNativeDriver: false,
+      }),
+    ]).start();
+  }, []);
+
+  return (
+    <Animated.View
+      style={[
+        {
+          transform: [{ translateX: offset.x }, { translateY: offset.y }],
+        },
+        { opacity },
+      ]}
+    >
+      <TouchableWithoutFeedback onPress={onPress}>
+        <View style={styles.userContainer}>
+          <Image style={styles.thumbnail} source={{ uri: user.avatar }} />
+
+          <View style={[styles.infoContainer, { backgroundColor: user.color }]}>
+            <View style={styles.bioContainer}>
+              <Text style={styles.name}>{user.name.toUpperCase()}</Text>
+              <Text style={styles.description}>{user.description}</Text>
+            </View>
+            <View style={styles.likesContainer}>
+              <Icon name="heart" size={12} color="#FFF" />
+              <Text style={styles.likes}>{user.likes}</Text>
+            </View>
           </View>
         </View>
-      </View>
-    </TouchableWithoutFeedback>
+      </TouchableWithoutFeedback>
+    </Animated.View>
   );
 };
 

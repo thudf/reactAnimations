@@ -108,16 +108,12 @@ const Aplicativo: React.FC = () => {
       <StatusBar barStyle="light-content" />
 
       <View style={styles.header}>
-        <Image
-          style={styles.headerImage}
-          source={
-            userSelected.id
-              ? { uri: userSelected.thumbnail }
-              : {
-                  uri: '',
-                }
-          }
-        />
+        {userSelected.id && (
+          <Image
+            style={styles.headerImage}
+            source={{ uri: userSelected.thumbnail }}
+          />
+        )}
 
         <Text style={styles.headerText}>
           {userSelected.id ? userSelected.name : 'GoNative'}
