@@ -4,7 +4,7 @@
 /* eslint-disable react/jsx-filename-extension */
 /* eslint-disable react/prefer-stateless-function */
 /* Core */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 /* Presentational */
 import {
@@ -16,6 +16,7 @@ import {
   StyleSheet,
   Dimensions,
   TouchableWithoutFeedback,
+  PanResponder,
 } from 'react-native';
 
 import Icon from 'react-native-vector-icons/FontAwesome';
@@ -36,8 +37,53 @@ interface UserComponent {
 }
 
 const User: React.FC<UserComponent> = ({ user, onPress, ...rest }) => {
+  const { width } = Dimensions.get('window');
+
   const [offset, setOffset] = useState(new Animated.ValueXY({ x: 0, y: 50 }));
   const [opacity, setOpacity] = useState(new Animated.Value(0));
+
+  const deleteUser = useCallback(() => {
+    Alert.alert('Deleted!');
+  }, []);
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onPanResponderTerminationRequest: () => false,
+      onMoveShouldSetPanResponder: () => true,
+
+      onPanResponderMove: Animated.event(
+        [
+          null,
+          {
+            dx: offset.x,
+          },
+        ],
+        {
+          useNativeDriver: false,
+        },
+      ),
+
+      onPanResponderRelease: () => {
+        if (offset.x._value < -200) {
+          deleteUser();
+        }
+
+        Animated.spring(offset.x, {
+          toValue: 0,
+          bounciness: 10,
+          useNativeDriver: false,
+        }).start();
+      },
+
+      onPanResponderTerminate: () => {
+        Animated.spring(offset.x, {
+          toValue: 0,
+          bounciness: 10,
+          useNativeDriver: false,
+        }).start();
+      },
+    }),
+  ).current;
 
   useEffect(() => {
     Animated.parallel([
@@ -58,9 +104,19 @@ const User: React.FC<UserComponent> = ({ user, onPress, ...rest }) => {
 
   return (
     <Animated.View
+      {...panResponder.panHandlers}
       style={[
         {
-          transform: [{ translateX: offset.x }, { translateY: offset.y }],
+          transform: [
+            { translateX: offset.x },
+            { translateY: offset.y },
+            {
+              rotateZ: offset.x.interpolate({
+                inputRange: [width * -1, width],
+                outputRange: ['-50deg', '50deg'],
+              }),
+            },
+          ],
         },
         { opacity },
       ]}

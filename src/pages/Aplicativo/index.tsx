@@ -4,7 +4,7 @@
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 /* eslint-disable react/state-in-constructor */
 /* eslint-disable import/extensions */
-import React, { Component, useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 
 import {
   View,
@@ -32,7 +32,13 @@ interface UserInterface {
 }
 
 const Aplicativo: React.FC = () => {
+  const { width } = Dimensions.get('window');
+
   const [scrollOffset, setScrollOffset] = useState(new Animated.Value(0));
+  const [listProgress, setListProgress] = useState(new Animated.Value(0));
+  const [userInfoProgress, setUserInfoProgress] = useState(
+    new Animated.Value(0),
+  );
   const [userSelected, setUserSelected] = useState<UserInterface>({} as User);
   const [userInfoVisible, setUserInfoVisible] = useState(false);
   const [users, setUsers] = useState<UserInterface[]>([
@@ -78,10 +84,33 @@ const Aplicativo: React.FC = () => {
     },
   ]);
 
-  const selectUser = useCallback((user) => {
-    setUserSelected(user);
-    setUserInfoVisible(true);
-  }, []);
+  const selectUser = useCallback(
+    (user) => {
+      setUserSelected(user);
+
+      Animated.sequence([
+        Animated.timing(listProgress, {
+          toValue: 100,
+          duration: 300,
+          useNativeDriver: false,
+        }),
+
+        Animated.timing(scrollOffset, {
+          toValue: 0,
+          useNativeDriver: false,
+        }),
+
+        Animated.timing(userInfoProgress, {
+          toValue: 100,
+          duration: 500,
+          useNativeDriver: false,
+        }),
+      ]).start(() => {
+        setUserInfoVisible(true);
+      });
+    },
+    [listProgress, scrollOffset, userInfoProgress],
+  );
 
   const renderDetail = useCallback(
     () => (
@@ -94,7 +123,21 @@ const Aplicativo: React.FC = () => {
 
   const renderList = useCallback(
     () => (
-      <View style={styles.container}>
+      <Animated.View
+        style={[
+          styles.container,
+          {
+            transform: [
+              {
+                translateX: listProgress.interpolate({
+                  inputRange: [0, 100],
+                  outputRange: [0, width],
+                }),
+              },
+            ],
+          },
+        ]}
+      >
         <ScrollView
           scrollEventThrottle={16}
           onScroll={Animated.event(
@@ -112,9 +155,9 @@ const Aplicativo: React.FC = () => {
             <User key={user.id} user={user} onPress={() => selectUser(user)} />
           ))}
         </ScrollView>
-      </View>
+      </Animated.View>
     ),
-    [selectUser, users],
+    [selectUser, users, scrollOffset],
   );
 
   return (
@@ -134,10 +177,38 @@ const Aplicativo: React.FC = () => {
         ]}
       >
         {userSelected.id && (
-          <Image
-            style={styles.headerImage}
-            source={{ uri: userSelected.thumbnail }}
-          />
+          <>
+            <Animated.Image
+              source={{ uri: userSelected.thumbnail }}
+              style={[
+                styles.headerImage,
+                {
+                  opacity: userInfoProgress.interpolate({
+                    inputRange: [0, 100],
+                    outputRange: [0, 1],
+                  }),
+                },
+              ]}
+            />
+
+            <Animated.Text
+              style={[
+                styles.headerText,
+                {
+                  transform: [
+                    {
+                      translateX: userInfoProgress.interpolate({
+                        inputRange: [0, 100],
+                        outputRange: [width * -1, 0],
+                      }),
+                    },
+                  ],
+                },
+              ]}
+            >
+              {userSelected.name}
+            </Animated.Text>
+          </>
         )}
 
         <Animated.Text
@@ -149,12 +220,21 @@ const Aplicativo: React.FC = () => {
                 outputRange: [24, 16],
                 extrapolate: 'clamp',
               }),
+              transform: [
+                {
+                  translateX: userInfoProgress.interpolate({
+                    inputRange: [0, 100],
+                    outputRange: [0, width],
+                  }),
+                },
+              ],
             },
           ]}
         >
-          {userSelected.id ? userSelected.name : 'GoNative'}
+          GoNative
         </Animated.Text>
       </Animated.View>
+
       {userInfoVisible ? renderDetail() : renderList()}
     </View>
   );
@@ -178,6 +258,7 @@ const styles = StyleSheet.create({
   },
 
   headerText: {
+    fontSize: 24,
     fontWeight: '900',
     color: '#FFF',
     backgroundColor: 'transparent',
